@@ -6,22 +6,24 @@ from torchvision.utils import make_grid, save_image
 from torch.autograd import Variable
 from torch.autograd import grad as torch_grad
 
+
 def points_to_image(points):
     """ 绘制图像 """
     batch_size = points.size(0)
     images = []
     for b in range(batch_size):
-        canvas = np.zeros((28, 28)) #生成背景图片
-        image = points[b]  #第一张图片
+        canvas = np.zeros((28, 28))  # 生成背景图片
+        image = points[b]  # 第一张图片
         for point in image:
-            if point[0] > 0: #看概率是否大于阈值
-                x, y = int(point[1]*28), int(point[2]*28)
+            if point[0] > 0:  # 看概率是否大于阈值
+                x, y = int(point[1] * 28), int(point[2] * 28)
                 x, y = min(x, 27), min(y, 27)
                 canvas[x, y] = 255
         images.append(canvas)
     images = np.asarray(images)
     images_tensor = torch.from_numpy(images)
     return images_tensor
+
 
 class Trainer():
     def __init__(self, generator, discriminator, gen_optimizer, dis_optimizer,
@@ -102,12 +104,13 @@ class Trainer():
         prob_interpolated = self.D(interpolated)
 
         gradients = torch_grad(outputs=prob_interpolated, inputs=interpolated,
-                               grad_outputs=torch.ones(prob_interpolated.size()).cuda() if self.use_cuda else torch.ones(
-                               prob_interpolated.size()),
+                               grad_outputs=torch.ones(
+                                   prob_interpolated.size()).cuda() if self.use_cuda else torch.ones(
+                                   prob_interpolated.size()),
                                create_graph=True, retain_graph=True)[0]
 
         gradients = gradients.view(batch_size, -1)
-        #保存梯度惩罚损失
+        # 保存梯度惩罚损失
         self.losses['gradient_norm'].append(gradients.norm(2, dim=1).mean().item())
 
         gradients_norm = torch.sqrt(torch.sum(gradients ** 2, dim=1) + 1e-12)
